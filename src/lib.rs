@@ -85,6 +85,22 @@
 #[doc(hidden)]
 pub use gensym::gensym;
 
+pub trait ComponentProvider<Component> {
+    fn get(&self) -> &Component;
+}
+
+pub trait ComponentProviderMut<Component>: ComponentProvider<Component> {
+    fn get_mut(&mut self) -> &mut Component;
+}
+
+pub trait ComponentProviderOptional<Component> {
+    fn get_optional(&self) -> Option<&Component>;
+}
+
+pub trait ComponentProviderOptionalMut<Component>: ComponentProviderOptional<Component> {
+    fn get_optional_mut(&mut self) -> Option<&mut Component>;
+}
+
 /// Attach to a component struct to implement [`ComponentProvider`] and [`ComponentProviderMut`] for the struct
 ///
 /// This allows behavior methods that require only a single component to be called on the struct
@@ -170,22 +186,6 @@ pub use hecs_component_provider_macros::QueryComponentProvider;
 /// # assert_eq!(position.0, 2);
 /// ```
 pub use hecs_component_provider_macros::default_trait_impl;
-
-pub trait ComponentProvider<Component> {
-    fn get(&self) -> &Component;
-}
-
-pub trait ComponentProviderMut<Component>: ComponentProvider<Component> {
-    fn get_mut(&mut self) -> &mut Component;
-}
-
-pub trait ComponentProviderOptional<Component> {
-    fn get_optional(&self) -> Option<&Component>;
-}
-
-pub trait ComponentProviderOptionalMut<Component>: ComponentProviderOptional<Component> {
-    fn get_optional_mut(&mut self) -> Option<&mut Component>;
-}
 
 /// Prepare a tuple query that includes component provider implementations for the returned entities
 ///
