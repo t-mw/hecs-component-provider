@@ -31,12 +31,12 @@ world.spawn((Position(1.0, 2.0), Velocity(0.7, 0.8)));
 
 // prepare a query that returns entities with the components required for the behavior
 gen_tuple_query_component_providers!(
-    Query1,
+    MovableQuery,
     (&mut Position, &Velocity)
 );
 
 let dt = 0.1;
-for (_, mut entity) in world.query_mut::<Query1>() {
+for (_, mut entity) in world.query_mut::<MovableQuery>() {
     // apply the behavior to the entity
     entity.apply_velocity(dt);
 
@@ -64,21 +64,19 @@ world.spawn((Enemy { shot_count: 0 }, Position(2.0, 3.0), Velocity(-0.7, -0.8)))
 
 // queries can be prepared using structs instead of tuples
 #[derive(hecs::Query, QueryComponentProvider)]
-struct Query2<'a> {
+struct EnemyQuery<'a> {
     enemy: &'a mut Enemy,
     position: &'a mut Position,
     velocity: &'a Velocity,
-    optional_health: Option<&'a i32>
 }
 
 let dt = 0.1;
-for (_, mut entity) in world.query_mut::<Query2>() {
+for (_, mut entity) in world.query_mut::<EnemyQuery>() {
     // apply the behavior to the entity
     entity.shoot_and_move(dt);
 
     assert_eq!(entity.enemy.shot_count, 1);
     assert_eq!(entity.position.0, 1.93);
     assert_eq!(entity.position.1, 2.92);
-    assert_eq!(entity.optional_health, None);
 }
 ```
