@@ -68,6 +68,7 @@ struct Query2<'a> {
     enemy: &'a mut Enemy,
     position: &'a mut Position,
     velocity: &'a Velocity,
+    optional_health: Option<&'a i32>
 }
 
 let dt = 0.1;
@@ -78,5 +79,6 @@ for (_, mut entity) in world.query_mut::<Query2>() {
     assert_eq!(entity.enemy.shot_count, 1);
     assert_eq!(entity.position.0, 1.93);
     assert_eq!(entity.position.1, 2.92);
+    assert_eq!(entity.optional_health, None);
 }
 ```

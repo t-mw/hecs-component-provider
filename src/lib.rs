@@ -63,6 +63,7 @@
 //!     enemy: &'a mut Enemy,
 //!     position: &'a mut Position,
 //!     velocity: &'a Velocity,
+//!     optional_health: Option<&'a i32>
 //! }
 //!
 //! let dt = 0.1;
@@ -73,13 +74,98 @@
 //!     assert_eq!(entity.enemy.shot_count, 1);
 //!     assert_eq!(entity.position.0, 1.93);
 //!     assert_eq!(entity.position.1, 2.92);
+//!     assert_eq!(entity.optional_health, None);
 //! }
 //! ```
 
 #[doc(hidden)]
 pub use gensym::gensym;
 
-pub use hecs_component_provider_macros::*;
+/// Attach to a component struct to implement [`ComponentProvider`] and [`ComponentProviderMut`] for the struct
+///
+/// This allows behavior methods that require only a single component to be called on the struct
+/// itself, even if the struct is not the direct result of a query.
+///
+/// ```
+/// use hecs_component_provider::{default_trait_impl, ComponentProvider};
+///
+/// #[derive(ComponentProvider)]
+/// struct Position(i32, i32);
+///
+/// #[default_trait_impl]
+/// trait DistanceCalculator: ComponentProvider<Position> {
+///     fn calculate_distance_squared_to(&self, other: &Position) -> i32 {
+///         let position: &Position = self.get();
+///         let dx = other.0 - position.0;
+///         let dy = other.1 - position.1;
+///         dx * dx + dy * dy
+///     }
+/// }
+///
+/// let position = Position(1, 2);
+/// let other = Position(5, 8);
+/// let distance_squared = position.calculate_distance_squared_to(&other);
+/// assert_eq!(distance_squared, 52);
+/// ```
+pub use hecs_component_provider_macros::ComponentProvider;
+
+/// Attach to a struct that derives [`hecs::Query`] to generate component provider implementations for entities returned by the query
+///
+/// ```
+/// use hecs_component_provider::{
+///     ComponentProvider, ComponentProviderMut, ComponentProviderOptional, QueryComponentProvider
+/// };
+///
+/// #[derive(Debug, Eq, PartialEq)]
+/// struct Position(i32, i32);
+/// #[derive(Debug, Eq, PartialEq)]
+/// struct Velocity(i32, i32);
+///
+/// #[derive(hecs::Query, QueryComponentProvider)]
+/// struct MovableQuery<'a> {
+///     position: &'a mut Position,
+///     velocity: &'a Velocity,
+/// }
+///
+/// let mut world = hecs::World::new();
+/// world.spawn((Position(10, 20), Velocity(7, 8)));
+/// for (_, mut entity) in world.query_mut::<MovableQuery>() {
+///     assert_eq!(entity.get_mut(), &mut Position(10, 20));
+///
+///     // bind to let to disambiguate between component providers for Position and Velocity:
+///     let _velocity: &Velocity = entity.get();
+///     // or use fully qualified syntax:
+///     assert_eq!(ComponentProvider::<Velocity>::get(&entity), &Velocity(7, 8));
+/// }
+/// ```
+pub use hecs_component_provider_macros::QueryComponentProvider;
+
+/// Implement the attached trait for all types that implement the trait's supertraits
+///
+/// This can be used to reduce boilerplate when defining behavior traits. Attach the macro to a behavior
+/// trait that requires certain components to exist and the trait will be implemented for all entities
+/// that have those components.
+///
+/// ```
+/// use hecs_component_provider::{default_trait_impl, ComponentProviderMut};
+///
+/// #[default_trait_impl]
+/// trait MoveRight: ComponentProviderMut<Position> {
+///    fn move_right(&mut self) {
+///        let position: &mut Position = self.get_mut();
+///        position.0 += 1;
+///    }
+/// }
+/// // `default_trait_impl` generates the following, which would otherwise need to be manually provided:
+/// // impl <T> move_right for T where T: ComponentProviderMut<Position> {}
+///
+/// # #[derive(hecs_component_provider::ComponentProvider)]
+/// # struct Position(i32, i32);
+/// # let mut position = Position(1, 2);
+/// # position.move_right();
+/// # assert_eq!(position.0, 2);
+/// ```
+pub use hecs_component_provider_macros::default_trait_impl;
 
 pub trait ComponentProvider<Component> {
     fn get(&self) -> &Component;
@@ -97,7 +183,36 @@ pub trait ComponentProviderOptionalMut<Component>: ComponentProviderOptional<Com
     fn get_optional_mut(&mut self) -> Option<&mut Component>;
 }
 
-/// Implement ComponentProvider for a tuple query type.
+/// Prepare a tuple query that includes component provider implementations for the returned entities
+///
+/// The first argument to the macro is the name of the query type that you would like to generate,
+/// which can then be passed to the query methods on [`hecs::World`].
+/// The second argument is the tuple of components that the query will return.
+///
+/// ```
+/// use hecs_component_provider::{
+///     gen_tuple_query_component_providers, ComponentProvider, ComponentProviderMut
+/// };
+///
+/// #[derive(Debug, Eq, PartialEq)]
+/// struct Position(i32, i32);
+/// #[derive(Debug, Eq, PartialEq)]
+/// struct Velocity(i32, i32);
+///
+/// let mut world = hecs::World::new();
+/// world.spawn((Position(10, 20), Velocity(7, 8)));
+///
+/// gen_tuple_query_component_providers!(MovableQuery, (&mut Position, &Velocity));
+///
+/// for (_, mut entity) in world.query_mut::<MovableQuery>() {
+///     assert_eq!(entity.get_mut(), &mut Position(10, 20));
+///
+///     // bind to let to disambiguate between component providers for Position and Velocity:
+///     let _velocity: &Velocity = entity.get();
+///     // or use fully qualified syntax:
+///     assert_eq!(ComponentProvider::<Velocity>::get(&entity), &Velocity(7, 8));
+/// }
+/// ```
 #[macro_export]
 macro_rules! gen_tuple_query_component_providers {
     // Uses a TT muncher to add lifetimes: https://users.rust-lang.org/t/macro-to-replace-type-parameters/17903/2
