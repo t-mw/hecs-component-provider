@@ -31,6 +31,7 @@
 //! );
 //!
 //! let dt = 0.1;
+//! # let mut found = false;
 //! for (_, mut entity) in world.query_mut::<MovableQuery>() {
 //!     // apply the behavior to the entity
 //!     entity.apply_velocity(dt);
@@ -38,7 +39,9 @@
 //!     let position = entity.0;
 //!     assert_eq!(position.0, 1.07);
 //!     assert_eq!(position.1, 2.08);
+//!     # found = true;
 //! }
+//! # assert!(found);
 //!
 //!
 //! // behaviors can depend on one another
@@ -66,6 +69,7 @@
 //! }
 //!
 //! let dt = 0.1;
+//! # let mut found = false;
 //! for (_, mut entity) in world.query_mut::<EnemyQuery>() {
 //!     // apply the behavior to the entity
 //!     entity.shoot_and_move(dt);
@@ -73,7 +77,9 @@
 //!     assert_eq!(entity.enemy.shot_count, 1);
 //!     assert_eq!(entity.position.0, 1.93);
 //!     assert_eq!(entity.position.1, 2.92);
+//!     # found = true;
 //! }
+//! # assert!(found);
 //! ```
 
 #[doc(hidden)]
