@@ -5,7 +5,7 @@
 
 Easily define behavior for sets of components when using the [hecs](https://github.com/Ralith/hecs/) ECS library.
 
-```
+```rust
 use hecs_component_provider::{
     default_trait_impl, gen_tuple_query_component_providers,
     ComponentProvider, ComponentProviderMut, QueryComponentProvider
