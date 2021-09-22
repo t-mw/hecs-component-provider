@@ -40,6 +40,7 @@
 //! }
 //! ```
 
+#[doc(hidden)]
 pub use gensym::gensym;
 
 pub use hecs_component_provider_macros::*;
