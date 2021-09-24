@@ -152,7 +152,7 @@ pub use hecs_component_provider_macros::ComponentProvider;
 /// for (_, mut entity) in world.query_mut::<MovableQuery>() {
 ///     assert_eq!(entity.get_mut(), &mut Position(10, 20));
 ///
-///     // bind to let to disambiguate between component providers for Position and Velocity:
+///     // bind with let to disambiguate between component providers for Position and Velocity:
 ///     let _velocity: &Velocity = entity.get();
 ///     // or use fully qualified syntax:
 ///     assert_eq!(ComponentProvider::<Velocity>::get(&entity), &Velocity(7, 8));
@@ -211,7 +211,7 @@ pub use hecs_component_provider_macros::default_trait_impl;
 /// for (_, mut entity) in world.query_mut::<MovableQuery>() {
 ///     assert_eq!(entity.get_mut(), &mut Position(10, 20));
 ///
-///     // bind to let to disambiguate between component providers for Position and Velocity:
+///     // bind with let to disambiguate between component providers for Position and Velocity:
 ///     let _velocity: &Velocity = entity.get();
 ///     // or use fully qualified syntax:
 ///     assert_eq!(ComponentProvider::<Velocity>::get(&entity), &Velocity(7, 8));
