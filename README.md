@@ -8,7 +8,7 @@ Easily define behavior for sets of components when using the [hecs](https://gith
 ```rust
 use hecs_component_provider::{
     default_trait_impl, gen_tuple_query_component_providers,
-    ComponentProvider, ComponentProviderMut, QueryComponentProvider
+    ComponentProvider, ComponentProviderMut
 };
 
 struct Position(f32, f32);
@@ -63,7 +63,7 @@ trait EnemyBehaviors: ApplyVelocity + ComponentProviderMut<Enemy> {
 world.spawn((Enemy { shot_count: 0 }, Position(2.0, 3.0), Velocity(-0.7, -0.8)));
 
 // queries can be prepared using structs instead of tuples
-#[derive(hecs::Query, QueryComponentProvider)]
+#[derive(hecs::Query, ComponentProvider)]
 struct EnemyQuery<'a> {
     enemy: &'a mut Enemy,
     position: &'a mut Position,

@@ -21,12 +21,12 @@ fn self_component_provider_test() {
 
 #[test]
 fn query_component_provider_basic_test() {
-    use hecs_component_provider::{ComponentProvider, QueryComponentProvider};
+    use hecs_component_provider::ComponentProvider;
 
     #[derive(Debug)]
     struct MyComponent(i32);
 
-    #[derive(hecs::Query, QueryComponentProvider)]
+    #[derive(hecs::Query, ComponentProvider)]
     struct MyQuery<'a> {
         integer: &'a i32,
         component: &'a MyComponent,
@@ -50,13 +50,13 @@ fn query_component_provider_basic_test() {
 fn query_component_provider_complex_test() {
     use hecs_component_provider::{
         ComponentProvider, ComponentProviderMut, ComponentProviderOptional,
-        ComponentProviderOptionalMut, QueryComponentProvider,
+        ComponentProviderOptionalMut,
     };
 
     #[derive(Debug, Eq, PartialEq)]
     struct MyComponent(i32);
 
-    #[derive(hecs::Query, QueryComponentProvider)]
+    #[derive(hecs::Query, ComponentProvider)]
     struct MyQuery<'a> {
         integer: &'a mut i32,
         boolean: Option<&'a bool>,

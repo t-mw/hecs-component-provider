@@ -173,7 +173,7 @@ fn decompose_derive_input(input: DeriveInput) -> Result<InputDecomposition> {
         _ => {
             return Err(Error::new_spanned(
                 ident,
-                "derive(QueryComponentProvider) may only be applied to structs",
+                "derive(ComponentProvider) may only be applied to structs",
             ))
         }
     };

@@ -3,7 +3,7 @@
 //! ```rust
 //! use hecs_component_provider::{
 //!     default_trait_impl, gen_tuple_query_component_providers,
-//!     ComponentProvider, ComponentProviderMut, QueryComponentProvider
+//!     ComponentProvider, ComponentProviderMut
 //! };
 //!
 //! struct Position(f32, f32);
@@ -61,7 +61,7 @@
 //! world.spawn((Enemy { shot_count: 0 }, Position(2.0, 3.0), Velocity(-0.7, -0.8)));
 //!
 //! // queries can be prepared using structs instead of tuples
-//! #[derive(hecs::Query, QueryComponentProvider)]
+//! #[derive(hecs::Query, ComponentProvider)]
 //! struct EnemyQuery<'a> {
 //!     enemy: &'a mut Enemy,
 //!     position: &'a mut Position,
@@ -133,7 +133,7 @@ pub use hecs_component_provider_macros::SelfComponentProvider;
 ///
 /// ```
 /// use hecs_component_provider::{
-///     ComponentProvider, ComponentProviderMut, ComponentProviderOptional, QueryComponentProvider
+///     ComponentProvider, ComponentProviderMut, ComponentProviderOptional
 /// };
 ///
 /// #[derive(Debug, Eq, PartialEq)]
@@ -141,7 +141,7 @@ pub use hecs_component_provider_macros::SelfComponentProvider;
 /// #[derive(Debug, Eq, PartialEq)]
 /// struct Velocity(i32, i32);
 ///
-/// #[derive(hecs::Query, QueryComponentProvider)]
+/// #[derive(hecs::Query, ComponentProvider)]
 /// struct MovableQuery<'a> {
 ///     position: &'a mut Position,
 ///     velocity: &'a Velocity,
@@ -158,7 +158,7 @@ pub use hecs_component_provider_macros::SelfComponentProvider;
 ///     assert_eq!(ComponentProvider::<Velocity>::get(&entity), &Velocity(7, 8));
 /// }
 /// ```
-pub use hecs_component_provider_macros::QueryComponentProvider;
+pub use hecs_component_provider_macros::ComponentProvider;
 
 /// Implement the attached trait for all types that implement the trait's supertraits
 ///
@@ -252,7 +252,7 @@ macro_rules! gen_tuple_query_component_providers {
     };
 
     ($gensym:ident, impl $alias:ident, ($($tt:tt)*)) => {
-        #[derive(::hecs::Query, $crate::QueryComponentProvider)]
+        #[derive(::hecs::Query, $crate::ComponentProvider)]
         struct $gensym<'a>($($tt)*);
         type $alias<'a> = $gensym<'a>;
     };
