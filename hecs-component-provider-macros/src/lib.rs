@@ -1,15 +1,15 @@
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput, ItemTrait};
 
-mod component_provider;
 mod default_trait_impl;
 mod query_component_provider;
+mod self_component_provider;
 
-#[proc_macro_derive(ComponentProvider)]
-pub fn component_provider_derive(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(SelfComponentProvider)]
+pub fn self_component_provider_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    match component_provider::derive(input) {
+    match self_component_provider::derive(input) {
         Ok(ts) => ts,
         Err(e) => e.to_compile_error(),
     }

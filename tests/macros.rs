@@ -1,10 +1,10 @@
 use hecs::World;
 
 #[test]
-fn component_provider_test() {
-    use hecs_component_provider::{default_trait_impl, ComponentProvider};
+fn self_component_provider_test() {
+    use hecs_component_provider::{default_trait_impl, ComponentProvider, SelfComponentProvider};
 
-    #[derive(ComponentProvider)]
+    #[derive(SelfComponentProvider)]
     struct MyComponent(i32);
 
     #[default_trait_impl]

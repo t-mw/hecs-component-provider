@@ -9,7 +9,7 @@ pub(crate) fn derive(input: DeriveInput) -> Result<TokenStream2> {
         _ => {
             return Err(Error::new_spanned(
                 ident,
-                "derive(ComponentProvider) may only be applied to structs",
+                "derive(SelfComponentProvider) may only be applied to structs",
             ))
         }
     };

@@ -107,9 +107,9 @@ pub trait ComponentProviderOptionalMut<Component>: ComponentProviderOptional<Com
 /// itself, even if the struct is not the direct result of a query.
 ///
 /// ```
-/// use hecs_component_provider::{default_trait_impl, ComponentProvider};
+/// use hecs_component_provider::{default_trait_impl, ComponentProvider, SelfComponentProvider};
 ///
-/// #[derive(ComponentProvider)]
+/// #[derive(SelfComponentProvider)]
 /// struct Position(i32, i32);
 ///
 /// #[default_trait_impl]
@@ -127,7 +127,7 @@ pub trait ComponentProviderOptionalMut<Component>: ComponentProviderOptional<Com
 /// let distance_squared = position.calculate_distance_squared_to(&other);
 /// assert_eq!(distance_squared, 52);
 /// ```
-pub use hecs_component_provider_macros::ComponentProvider;
+pub use hecs_component_provider_macros::SelfComponentProvider;
 
 /// Attach to a struct that derives [`hecs::Query`] to generate component provider implementations for entities returned by the query
 ///
@@ -179,7 +179,7 @@ pub use hecs_component_provider_macros::QueryComponentProvider;
 /// // `default_trait_impl` generates the following, which would otherwise need to be manually provided:
 /// // impl <T> move_right for T where T: ComponentProviderMut<Position> {}
 ///
-/// # #[derive(hecs_component_provider::ComponentProvider)]
+/// # #[derive(hecs_component_provider::SelfComponentProvider)]
 /// # struct Position(i32, i32);
 /// # let mut position = Position(1, 2);
 /// # position.move_right();
