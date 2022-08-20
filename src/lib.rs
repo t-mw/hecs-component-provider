@@ -129,17 +129,37 @@ pub trait ComponentProviderOptionalMut<Component>: ComponentProviderOptional<Com
 /// ```
 pub use hecs_component_provider_macros::SelfComponentProvider;
 
-/// Attach to a struct that derives [`hecs::Query`] to generate component provider implementations for entities returned by the query
+/// Attach to a struct that derives [`hecs::Bundle`] or [`hecs::Query`] to generate component provider implementations for those structs.
 ///
 /// ```
 /// use hecs_component_provider::{
-///     ComponentProvider, ComponentProviderMut, ComponentProviderOptional
+///     default_trait_impl, ComponentProvider, ComponentProviderMut
 /// };
 ///
 /// #[derive(Debug, Eq, PartialEq)]
 /// struct Position(i32, i32);
 /// #[derive(Debug, Eq, PartialEq)]
 /// struct Velocity(i32, i32);
+///
+/// #[default_trait_impl]
+/// trait ApplyVelocity: ComponentProviderMut<Position> + ComponentProvider<Velocity> {
+///     fn apply_velocity(&mut self) {
+///         // bind with let to disambiguate between component providers for Position and Velocity:
+///         let &Velocity(vx, vy) = self.get();
+///         // or use fully qualified syntax:
+///         assert!(matches!(ComponentProvider::<Velocity>::get(self), &Velocity(_, _)));
+
+///         let position: &mut Position = self.get_mut();
+///         position.0 += vx;
+///         position.1 += vy;
+///     }
+/// }
+///
+/// #[derive(hecs::Bundle, ComponentProvider)]
+/// struct Entity {
+///     position: Position,
+///     velocity: Velocity,
+/// }
 ///
 /// #[derive(hecs::Query, ComponentProvider)]
 /// struct MovableQuery<'a> {
@@ -148,14 +168,17 @@ pub use hecs_component_provider_macros::SelfComponentProvider;
 /// }
 ///
 /// let mut world = hecs::World::new();
-/// world.spawn((Position(10, 20), Velocity(7, 8)));
-/// for (_, mut entity) in world.query_mut::<MovableQuery>() {
-///     assert_eq!(entity.get_mut(), &mut Position(10, 20));
+/// let mut spawn_entity = Entity {
+///     position: Position(10, 20),
+///     velocity: Velocity(7, 8)
+/// };
+/// spawn_entity.apply_velocity(); // uses ComponentProvider implementation on Bundle
+/// world.spawn(spawn_entity);
 ///
-///     // bind with let to disambiguate between component providers for Position and Velocity:
-///     let _velocity: &Velocity = entity.get();
-///     // or use fully qualified syntax:
-///     assert_eq!(ComponentProvider::<Velocity>::get(&entity), &Velocity(7, 8));
+/// for (_, mut entity) in world.query_mut::<MovableQuery>() {
+///     entity.apply_velocity(); // uses ComponentProvider implementation on Query
+///     let position: &Position = entity.get();
+///     assert_eq!(position, &Position(24, 36)); // apply_velocity has been applied twice by now
 /// }
 /// ```
 pub use hecs_component_provider_macros::ComponentProvider;

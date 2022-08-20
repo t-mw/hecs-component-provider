@@ -47,6 +47,31 @@ fn query_component_provider_basic_test() {
 }
 
 #[test]
+fn bundle_component_provider_basic_test() {
+    use hecs_component_provider::ComponentProvider;
+
+    #[derive(Debug)]
+    struct MyComponent(i32);
+
+    #[derive(hecs::Bundle, ComponentProvider)]
+    struct Bundle {
+        integer: i32,
+        component: MyComponent,
+    }
+
+    let entity = Bundle {
+        integer: 123,
+        component: MyComponent(456),
+    };
+
+    let integer: &i32 = entity.get();
+    assert_eq!(*integer, 123);
+
+    let component: &MyComponent = entity.get();
+    assert_eq!(component.0, 456);
+}
+
+#[test]
 fn query_component_provider_complex_test() {
     use hecs_component_provider::{
         ComponentProvider, ComponentProviderMut, ComponentProviderOptional,
@@ -94,6 +119,50 @@ fn query_component_provider_complex_test() {
     assert_eq!(component, Some(&mut MyComponent(456)));
 
     let string: &&str = entity.get();
+    assert_eq!(*string, "abc");
+}
+
+#[test]
+fn bundle_component_provider_complex_test() {
+    use hecs_component_provider::{ComponentProvider, ComponentProviderMut};
+
+    #[derive(Debug, Eq, PartialEq)]
+    struct MyComponent(i32);
+
+    #[derive(hecs::Bundle, ComponentProvider)]
+    struct Bundle {
+        integer: i32,
+        boolean: Option<bool>,
+        component: Option<MyComponent>,
+        string: String,
+    }
+
+    let mut entity = Bundle {
+        integer: 123,
+        boolean: Some(true),
+        component: Some(MyComponent(456)),
+        string: "abc".to_string(),
+    };
+
+    let integer: &i32 = entity.get();
+    assert_eq!(*integer, 123);
+
+    let integer: &i32 = entity.get();
+    assert_eq!(*integer, 123);
+
+    let integer: &mut i32 = entity.get_mut();
+    assert_eq!(*integer, 123);
+
+    let boolean: &Option<bool> = entity.get();
+    assert_eq!(*boolean, Some(true));
+
+    let component: &Option<MyComponent> = entity.get();
+    assert_eq!(*component, Some(MyComponent(456)));
+
+    let component: &mut Option<MyComponent> = entity.get_mut();
+    assert_eq!(*component, Some(MyComponent(456)));
+
+    let string: &String = entity.get();
     assert_eq!(*string, "abc");
 }
 

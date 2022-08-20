@@ -26,24 +26,37 @@ fn derive_refs(input: DeriveInput) -> Result<TokenStream2> {
         fields,
         types,
         ref_types,
+        struct_type,
         ..
     } = decompose_derive_input(input)?;
 
-    let (fields, types, ref_types): (Vec<_>, Vec<_>, Vec<_>) =
-        izip!(fields.into_iter(), types.into_iter(), ref_types.into_iter())
-            .filter_map(|(f, t, p)| {
-                Some((f, remove_type_lifetime(&remove_type_mutability(&t)), p?))
-            })
-            .unzip_n();
-
-    let tokens = quote! {
-        #(
-            impl<'a> ::hecs_component_provider::ComponentProvider<#ref_types> for #ident<'a> {
-                fn get(&self) -> #types {
-                    self.#fields
+    let tokens = match struct_type {
+        StructType::Bundle => quote! {
+            #(
+                impl ::hecs_component_provider::ComponentProvider<#types> for #ident {
+                    fn get(&self) -> &#types {
+                        &self.#fields
+                    }
                 }
+            )*
+        },
+        StructType::Query => {
+            let (fields, types, ref_types): (Vec<_>, Vec<_>, Vec<_>) =
+                izip!(fields.into_iter(), types.into_iter(), ref_types.into_iter())
+                    .filter_map(|(f, t, p)| {
+                        Some((f, remove_type_lifetime(&remove_type_mutability(&t)), p?))
+                    })
+                    .unzip_n();
+            quote! {
+                        #(
+                            impl<'a> ::hecs_component_provider::ComponentProvider<#ref_types> for #ident<'a> {
+                                fn get(&self) -> #types {
+                                    self.#fields
+                                }
+                            }
+                        )*
             }
-        )*
+        }
     };
 
     Ok(tokens)
@@ -55,28 +68,41 @@ fn derive_muts(input: DeriveInput) -> Result<TokenStream2> {
         fields,
         types,
         ref_types,
+        struct_type,
         ..
     } = decompose_derive_input(input)?;
 
-    let (fields, types, ref_types): (Vec<_>, Vec<_>, Vec<_>) =
-        izip!(fields.into_iter(), types.into_iter(), ref_types.into_iter())
-            .filter_map(|(f, t, p)| {
-                if is_mutable_type_ref(&t) {
-                    Some((f, remove_type_lifetime(&t), p?))
-                } else {
-                    None
+    let tokens = match struct_type {
+        StructType::Bundle => quote! {
+            #(
+                impl ::hecs_component_provider::ComponentProviderMut<#types> for #ident {
+                    fn get_mut(&mut self) -> &mut #types {
+                        &mut self.#fields
+                    }
                 }
-            })
-            .unzip_n();
-
-    let tokens = quote! {
-        #(
-            impl<'a> ::hecs_component_provider::ComponentProviderMut<#ref_types> for #ident<'a> {
-                fn get_mut(&mut self) -> #types {
-                    self.#fields
-                }
+            )*
+        },
+        StructType::Query => {
+            let (fields, types, ref_types): (Vec<_>, Vec<_>, Vec<_>) =
+                izip!(fields.into_iter(), types.into_iter(), ref_types.into_iter())
+                    .filter_map(|(f, t, p)| {
+                        if is_mutable_type_ref(&t) {
+                            Some((f, remove_type_lifetime(&t), p?))
+                        } else {
+                            None
+                        }
+                    })
+                    .unzip_n();
+            quote! {
+                        #(
+                            impl<'a> ::hecs_component_provider::ComponentProviderMut<#ref_types> for #ident<'a> {
+                                fn get_mut(&mut self) -> #types {
+                                    self.#fields
+                                }
+                            }
+                        )*
             }
-        )*
+        }
     };
 
     Ok(tokens)
@@ -88,30 +114,37 @@ fn derive_option_refs(input: DeriveInput) -> Result<TokenStream2> {
         fields,
         types,
         option_types,
+        struct_type,
         ..
     } = decompose_derive_input(input)?;
 
-    let (fields, types, option_types): (Vec<_>, Vec<_>, Vec<_>) = izip!(
-        fields.into_iter(),
-        types.into_iter(),
-        option_types.into_iter()
-    )
-    .filter_map(|(f, t, p)| Some((f, remove_type_lifetime(&remove_type_mutability(&t)), p?)))
-    .unzip_n();
-
-    let tokens = quote! {
-        #(
-            impl<'a> ::hecs_component_provider::ComponentProviderOptional<#option_types> for #ident<'a> {
-                fn get_optional(&self) -> #types {
-                    // convert Option<&mut T> to Option<&T>
-                    if let Some(v) = &self.#fields {
-                        Some(&*v)
-                    } else {
-                        None
-                    }
-                }
+    let tokens = match struct_type {
+        StructType::Bundle => quote! {},
+        StructType::Query => {
+            let (fields, types, option_types): (Vec<_>, Vec<_>, Vec<_>) = izip!(
+                fields.into_iter(),
+                types.into_iter(),
+                option_types.into_iter()
+            )
+            .filter_map(|(f, t, p)| {
+                Some((f, remove_type_lifetime(&remove_type_mutability(&t)), p?))
+            })
+            .unzip_n();
+            quote! {
+                    #(
+                        impl<'a> ::hecs_component_provider::ComponentProviderOptional<#option_types> for #ident<'a> {
+                            fn get_optional(&self) -> #types {
+                                // convert Option<&mut T> to Option<&T>
+                                if let Some(v) = &self.#fields {
+                                    Some(&*v)
+                                } else {
+                                    None
+                                }
+                            }
+                        }
+                    )*
             }
-        )*
+        }
     };
 
     Ok(tokens)
@@ -123,36 +156,41 @@ fn derive_option_muts(input: DeriveInput) -> Result<TokenStream2> {
         fields,
         types,
         option_types,
+        struct_type,
         ..
     } = decompose_derive_input(input)?;
 
-    let (fields, types, option_types): (Vec<_>, Vec<_>, Vec<_>) = izip!(
-        fields.into_iter(),
-        types.into_iter(),
-        option_types.into_iter()
-    )
-    .filter_map(|(f, t, p)| {
-        if is_mutable_type_ref(&t) {
-            Some((f, remove_type_lifetime(&t), p?))
-        } else {
-            None
-        }
-    })
-    .unzip_n();
-
-    let tokens = quote! {
-        #(
-            impl<'a> ::hecs_component_provider::ComponentProviderOptionalMut<#option_types> for #ident<'a> {
-                fn get_optional_mut(&mut self) -> #types {
-                    // fix Copy error when returning self.#fields directly
-                    if let Some(v) = &mut self.#fields {
-                        Some(&mut *v)
-                    } else {
-                        None
-                    }
+    let tokens = match struct_type {
+        StructType::Bundle => quote! {},
+        StructType::Query => {
+            let (fields, types, option_types): (Vec<_>, Vec<_>, Vec<_>) = izip!(
+                fields.into_iter(),
+                types.into_iter(),
+                option_types.into_iter()
+            )
+            .filter_map(|(f, t, p)| {
+                if is_mutable_type_ref(&t) {
+                    Some((f, remove_type_lifetime(&t), p?))
+                } else {
+                    None
                 }
+            })
+            .unzip_n();
+            quote! {
+                        #(
+                            impl<'a> ::hecs_component_provider::ComponentProviderOptionalMut<#option_types> for #ident<'a> {
+                                fn get_optional_mut(&mut self) -> #types {
+                                    // fix Copy error when returning self.#fields directly
+                                    if let Some(v) = &mut self.#fields {
+                                        Some(&mut *v)
+                                    } else {
+                                        None
+                                    }
+                                }
+                            }
+                        )*
             }
-        )*
+        }
     };
 
     Ok(tokens)
@@ -164,6 +202,12 @@ struct InputDecomposition {
     types: Vec<Type>,
     ref_types: Vec<Option<Type>>,
     option_types: Vec<Option<Type>>,
+    struct_type: StructType,
+}
+
+enum StructType {
+    Bundle,
+    Query,
 }
 
 fn decompose_derive_input(input: DeriveInput) -> Result<InputDecomposition> {
@@ -178,23 +222,16 @@ fn decompose_derive_input(input: DeriveInput) -> Result<InputDecomposition> {
         }
     };
 
-    let lifetime = input
-        .generics
-        .lifetimes()
-        .next()
-        .map(|x| x.lifetime.clone());
-    if lifetime.is_none() {
+    let lifetimes: Vec<_> = input.generics.lifetimes().cloned().collect();
+    if lifetimes.len() > 1 {
         return Err(Error::new_spanned(
             input.generics,
-            "must have exactly one lifetime parameter",
+            "must have <= 1 lifetime parameter",
         ));
     };
 
-    if input.generics.params.len() != 1 {
-        return Err(Error::new_spanned(
-            ident,
-            "must have exactly one lifetime parameter and no type parameters",
-        ));
+    if input.generics.params.len() != lifetimes.len() {
+        return Err(Error::new_spanned(ident, "must have no type parameters"));
     }
 
     let (fields, types) = match data.fields {
@@ -229,6 +266,11 @@ fn decompose_derive_input(input: DeriveInput) -> Result<InputDecomposition> {
         types,
         ref_types,
         option_types,
+        struct_type: if lifetimes.len() == 0 {
+            StructType::Bundle
+        } else {
+            StructType::Query
+        },
     })
 }
 
